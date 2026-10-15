@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sae-input-localization"
+version = "0.1.0"
+description = "Optimal input scope curves and intervention diagnostics for frozen sparse autoencoders"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {file = "LICENSE"}
+authors = [{name = "Haotian Ma"}, {name = "Ruqi Yang"}]
+dependencies = ["numpy>=1.24"]
+keywords = ["sparse autoencoders", "mechanistic interpretability", "interventions", "feature localization"]
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7", "matplotlib>=3.7", "pandas>=1.5"]
+experiments = ["torch>=2.0", "matplotlib>=3.7", "pandas>=1.5"]
+
+[tool.setuptools.packages.find]
+include = ["sae_localize*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra"

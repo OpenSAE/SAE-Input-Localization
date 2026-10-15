@@ -1,0 +1,21 @@
+__pycache__/
+.pytest_cache/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.coverage
+*.log
+*.aux
+*.out
+*.toc
+*.bbl
+*.blg
+*.synctex.gz
+.DS_Store
+.vscode/
+.idea/
+# Keep committed experiment .npz/.pt/.csv/.json reference data.
+# New derived results should be written under a separate user-chosen directory.

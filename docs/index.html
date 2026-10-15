@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="description" content="An illustrated explanation of input localization for frozen sparse autoencoders and its reproducible experiments." />
+  <title>SAE Input Localization · OpenSAE</title>
+  <style>
+    :root { color-scheme: dark; --ink:#eaf1fb; --muted:#a3b3c9; --base:#07111d; --panel:#101e31; --border:#2a3c54; --cyan:#66ded4; --blue:#86baff; }
+    * {box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:var(--base);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.65}
+    a {color:var(--cyan)} code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
+    header{border-bottom:1px solid var(--border);background:radial-gradient(circle at 18% 20%,#16435f66,transparent 38%),linear-gradient(110deg,#0d2035,#07111d 80%)}
+    .wrap{max-width:1020px;margin:auto;padding:0 24px}
+    nav{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:20px 0}
+    .brand{font-weight:800;letter-spacing:.04em;color:#fff;text-decoration:none}.brand span{color:var(--cyan)}nav a{text-decoration:none;font-size:14px;margin-right:13px}
+    h1{font-size:clamp(2rem,4.7vw,3.6rem);max-width:870px;line-height:1.12;margin:35px 0 19px;letter-spacing:-.035em}
+    h2{font-size:clamp(1.55rem,3vw,2.25rem);line-height:1.22;letter-spacing:-.02em;margin:0 0 18px}h3{font-size:1.15rem}
+    .intro{font-size:1.15rem;color:#bfd2e8;max-width:810px;margin-bottom:25px}
+    .eyebrow{font-size:.8rem;text-transform:uppercase;letter-spacing:.18em;color:var(--cyan);font-weight:800}
+    .hero{padding:50px 0 68px}.pills{display:flex;gap:10px;flex-wrap:wrap}.pill{border:1px solid #547791;color:#cae7f4;border-radius:30px;padding:7px 13px;font-size:.81rem;text-decoration:none}
+    section{padding:70px 0;border-bottom:1px solid var(--border)}section:last-child{border:0}
+    p{color:#c0cee0}strong{color:#fff}.muted{color:var(--muted)}
+    .figure{background:#fff;border-radius:14px;padding:10px;margin-top:22px;box-shadow:0 20px 45px #0006}.figure img{display:block;width:100%;height:auto;border-radius:6px}
+    .caption{font-size:.88rem;line-height:1.45;color:var(--muted);margin-top:12px}
+    .stats,.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+    .tile{background:var(--panel);border:1px solid var(--border);padding:19px;border-radius:13px}.tile .num{font-size:2.15rem;line-height:1.2;color:var(--cyan);font-weight:800;font-variant-numeric:tabular-nums}.tile p{font-size:.9rem;margin:.5rem 0 0}.tile h3{margin:0 0 8px}
+    .formula{font-family:ui-monospace,monospace;background:#121d2c;border:1px solid #32506b;border-radius:10px;padding:18px;overflow:auto;color:#a9e8f0;white-space:pre-wrap}
+    pre{background:#101b2a;border:1px solid #36506a;border-radius:12px;padding:23px;overflow:auto;color:#b6eedf;font-size:.86rem;line-height:1.65}
+    .step{display:flex;gap:16px;margin:23px 0}.round{display:grid;place-items:center;background:#204457;color:var(--cyan);font-weight:bold;flex:0 0 35px;width:35px;height:35px;border-radius:50%}.step-content{flex:1}.step h3{margin:0 0 6px}.step p{margin:0}
+    table{border-collapse:collapse;width:100%;font-size:.93rem}th,td{text-align:left;padding:12px 15px;border-bottom:1px solid #35445a}th{color:#c8f4ee}td:nth-child(n+2){font-variant-numeric:tabular-nums}
+    footer{padding:45px 0;color:var(--muted);font-size:.88rem}
+    @media(max-width:720px){.stats,.cols{grid-template-columns:1fr}nav{align-items:flex-start}.hero{padding-top:23px}.wrap{padding:0 18px}section{padding:50px 0}h1{margin-top:20px}th,td{padding:10px 7px;font-size:.8rem}}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <nav><a class="brand" href="https://github.com/AtheavenMa/SAE-Input-Localization">Open<span>SAE</span> · LOCALIZE</a><div><a href="#question">Question</a><a href="#measure">Measure</a><a href="#evidence">Evidence</a><a href="#run">Try it</a></div></nav>
+      <div class="hero">
+        <div class="eyebrow">OpenSAE · 5-minute tutorial</div>
+        <h1>Sparse features can reconstruct well without depending on local inputs.</h1>
+        <p class="intro">SAE Input Localization distinguishes what a frozen sparse autoencoder <strong>represents</strong> from which controlled input variables actually determine its features.</p>
+        <div class="pills"><a class="pill" href="https://github.com/AtheavenMa/SAE-Input-Localization#readme">Project README ↗</a><a class="pill" href="https://github.com/AtheavenMa/SAE-Input-Localization/blob/main/README_cn.md">中文 README ↗</a><a class="pill" href="#run">Run the offline demo ↓</a></div>
+      </div>
+    </div>
+  </header>
+  <main class="wrap">
+    <section id="question">
+      <div class="eyebrow">01 · Central question</div>
+      <h2>Can the same SAE have different input dependencies?</h2>
+      <p>Yes. A representation-only objective sees the same distribution of hidden states regardless of how those states were paired with the inputs. Permuting that pairing can preserve every hidden-state and activation sample while changing the controlled input factors a feature depends on.</p>
+      <div class="figure"><img src="../assets/figures/fig1.png" alt="Same representation samples and same SAE, but the required scope budget increases under XOR mixing" /></div>
+      <div class="caption">Figure 1. The same representation samples and frozen SAE support different input-dependency budgets under bijective input maps.</div>
+    </section>
+    <section id="measure">
+      <div class="eyebrow">02 · Definitions</div>
+      <h2>Keep the SAE fixed, change only which inputs are allowed to explain each feature.</h2>
+      <div class="cols">
+        <div class="tile"><h3>Feature scope</h3><p>Aⱼ is a set of controlled input variables. It is the set used to predict activation zⱼ.</p></div>
+        <div class="tile"><h3>Cost</h3><p>Count each input-feature dependency separately. B(A)=Σⱼ |Aⱼ|.</p></div>
+        <div class="tile"><h3>Residual</h3><p>Γ measures activation variance left after using only the selected inputs for each feature.</p></div>
+      </div>
+      <div class="formula">L_z(B) = min{ Γ_z(A) : Σⱼ |Aⱼ| ≤ B }
+B_z(τ) = min{ B : L_z(B) ≤ τ }</div>
+      <p>The first curve asks how much unexplained feature variance remains under a fixed budget. The inverse asks how many total input-feature incidences are needed to reach a required fidelity. Reconstruction error and SAE sparsity cannot answer this question because they do not specify the input-to-sample correspondence.</p>
+      <div class="figure"><img src="../assets/figures/fig2.png" alt="Finite-field exact input-scope curves by interaction order" /></div>
+      <div class="caption">Theorem construction: with n=4 and p=7, every order uses the same representation distribution and the same frozen SAE; exact localization cost increases in proportion to the interaction order.</div>
+    </section>
+    <section id="evidence">
+      <div class="eyebrow">03 · Controlled evidence</div>
+      <h2>Five trained SAEs. Same codes, higher scope budgets.</h2>
+      <p>Each seed trains a small representation model and a 24-to-48 overcomplete SAE on 192 of 256 Boolean states. The encoders and decoders are then frozen and evaluated with three bijective input maps on the full grid.</p>
+      <div class="stats">
+        <div class="tile"><div class="num">136.0</div><p>Identity map, mean budget at 90% explained activation variance</p></div>
+        <div class="tile"><div class="num">192.4</div><p>XOR arity 3, an increase of 41.5%</p></div>
+        <div class="tile"><div class="num">202.8</div><p>XOR arity 5, an increase of 49.1%</p></div>
+      </div>
+      <div class="figure"><img src="../assets/figures/fig3.png" alt="Learned SAE scope curves and paired resampling recovery" /></div>
+      <div class="caption">Figure 3. Paired interventions approach the exact optimal curve as the sample size increases.</div>
+      <h3>How strong are the lower bounds?</h3>
+      <p>The representation-level spectral bound is coarse; the feature-order bound is tighter because it uses the learned activation structure.</p>
+      <div class="figure"><img src="../assets/figures/fig4.png" alt="Spectral and feature-order lower bounds compared with exact budgets" /></div>
+      <div class="caption">Appendix Figure 4. The strength of a certificate depends on the information it retains.</div>
+    </section>
+    <section id="run">
+      <div class="eyebrow">04 · Reproduce in minutes</div>
+      <h2>Run the scope-curve demo.</h2>
+      <div class="step"><div class="round">1</div><div class="step-content"><h3>Install the package</h3><p>Only NumPy is required for the full-grid core analysis and built-in offline demo.</p></div></div>
+      <div class="step"><div class="round">2</div><div class="step-content"><h3>Recompute all five-seed curves</h3><p>The demo computes and plots each optimal scope curve from the released activation arrays.</p></div></div>
+      <div class="step"><div class="round">3</div><div class="step-content"><h3>Use your own controlled data</h3><p>Provide complete frozen SAE codes in Boolean input bitmask row order and a declared number of factors.</p></div></div>
+      <pre>python -m pip install -e .
+python demo/demo.py
+python experiments/exact_construction/verify_family.py
+python -m pytest -q
+
+# A complete Boolean factorial activation table:
+python demo/custom_activations.py my_codes.npy --n-factors 8</pre>
+      <p>Continue with the <a href="API.md">Python API</a> and <a href="REPRODUCIBILITY.md">reproduction guide</a>.</p>
+    </section>
+  </main>
+  <footer class="wrap">OpenSAE · Sparse Autoencoders Do Not Guarantee Local Features</footer>
+</body>
+</html>
