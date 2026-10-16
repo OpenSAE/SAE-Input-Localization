@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>📄 arXiv paper coming soon</b> &nbsp; | &nbsp;
-  <a href="https://htmlpreview.github.io/?https://github.com/AtheavenMa/SAE-Input-Localization/blob/main/docs/index.html"><b>🎞️ 5-minute tutorial</b></a> &nbsp; | &nbsp;
+  <a href="https://htmlpreview.github.io/?https://github.com/OpenSAE/SAE-Input-Localization/blob/main/docs/index.html"><b>🎞️ 5-minute tutorial</b></a> &nbsp; | &nbsp;
   <a href="#-demo"><b>🧪 Demo</b></a>
 </p>
 
@@ -17,6 +17,16 @@
 </p>
 
 **Figure 1.** Two bijective input maps provide exactly the same representation samples to the same frozen SAE. Yet the inputs needed to explain its feature activations differ. Across five learned SAEs, the budget needed to explain 90% of activation variance increases by **41% and 49%** under the mixed maps.
+
+---
+
+## 🎞️ 5-Minute Tutorial
+
+<p align="center">
+  <a href="https://htmlpreview.github.io/?https://github.com/OpenSAE/SAE-Input-Localization/blob/main/docs/index.html"><img src="assets/tour_preview.svg" alt="Seven-slide interactive five-minute tutorial" width="900"/></a>
+</p>
+
+💻 Click to open the [tutorial](https://htmlpreview.github.io/?https://github.com/OpenSAE/SAE-Input-Localization/blob/main/docs/index.html) in your browser
 
 ---
 
@@ -98,7 +108,7 @@ The results separate representation quality from input localization: the same sp
 ## ⚙️ Install
 
 ```bash
-git clone https://github.com/AtheavenMa/SAE-Input-Localization.git
+git clone https://github.com/OpenSAE/SAE-Input-Localization.git
 cd SAE-Input-Localization
 pip install -e .
 ```
