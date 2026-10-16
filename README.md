@@ -108,7 +108,7 @@ The results separate representation quality from input localization: the same sp
 ## ⚙️ Install
 
 ```bash
-git clone https://github.com/AtheavenMa/SAE-Input-Localization.git
+git clone https://github.com/OpenSAE/SAE-Input-Localization.git
 cd SAE-Input-Localization
 pip install -e .
 ```
