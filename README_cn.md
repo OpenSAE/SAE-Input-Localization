@@ -6,7 +6,7 @@
 
 <p align="center">
   <b>📄 arXiv 论文即将上线</b> &nbsp; | &nbsp;
-  <a href="https://htmlpreview.github.io/?https://github.com/AtheavenMa/SAE-Input-Localization/blob/main/docs/index.html"><b>🎞️ 5 分钟讲解</b></a> &nbsp; | &nbsp;
+  <a href="https://htmlpreview.github.io/?https://github.com/OpenSAE/SAE-Input-Localization/blob/main/docs/index.html"><b>🎞️ 5 分钟讲解</b></a> &nbsp; | &nbsp;
   <a href="#-demo"><b>🧪 Demo</b></a>
 </p>
 
@@ -15,6 +15,16 @@
 <p align="center"><img src="assets/figures/fig1.png" alt="相同表示和 SAE，不同输入依赖" width="900"/></p>
 
 **Figure 1.** 两个可逆输入映射向同一个冻结的 SAE 提供完全相同的表示样本，但解释特征激活所需的输入不同。在五个训练得到的 SAE 上，混合输入映射让解释 90% 激活方差所需的预算增加了 **41% 和 49%**。
+
+---
+
+## 🎞️ 5 分钟讲解
+
+<p align="center">
+  <a href="https://htmlpreview.github.io/?https://github.com/OpenSAE/SAE-Input-Localization/blob/main/docs/index.html"><img src="assets/tour_preview.svg" alt="7 页交互式 5 分钟教程" width="900"/></a>
+</p>
+
+💻 点击打开浏览器中的 [交互式教程](https://htmlpreview.github.io/?https://github.com/OpenSAE/SAE-Input-Localization/blob/main/docs/index.html)
 
 ---
 
