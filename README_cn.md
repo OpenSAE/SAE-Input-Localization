@@ -106,7 +106,7 @@ $$\mathbb E\left[\left(z_j(x)-\mathbb E[z_j\mid x_A]\right)^2\right]=\frac12\mat
 ## ⚙️ 安装
 
 ```bash
-git clone https://github.com/AtheavenMa/SAE-Input-Localization.git
+git clone https://github.com/OpenSAE/SAE-Input-Localization.git
 cd SAE-Input-Localization
 pip install -e .
 ```
