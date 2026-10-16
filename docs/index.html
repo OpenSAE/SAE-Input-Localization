@@ -1,103 +1,922 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="description" content="An illustrated explanation of input localization for frozen sparse autoencoders and its reproducible experiments." />
-  <title>SAE Input Localization · OpenSAE</title>
-  <style>
-    :root { color-scheme: dark; --ink:#eaf1fb; --muted:#a3b3c9; --base:#07111d; --panel:#101e31; --border:#2a3c54; --cyan:#66ded4; --blue:#86baff; }
-    * {box-sizing:border-box} html{scroll-behavior:smooth} body{margin:0;background:var(--base);color:var(--ink);font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.65}
-    a {color:var(--cyan)} code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace}
-    header{border-bottom:1px solid var(--border);background:radial-gradient(circle at 18% 20%,#16435f66,transparent 38%),linear-gradient(110deg,#0d2035,#07111d 80%)}
-    .wrap{max-width:1020px;margin:auto;padding:0 24px}
-    nav{display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;padding:20px 0}
-    .brand{font-weight:800;letter-spacing:.04em;color:#fff;text-decoration:none}.brand span{color:var(--cyan)}nav a{text-decoration:none;font-size:14px;margin-right:13px}
-    h1{font-size:clamp(2rem,4.7vw,3.6rem);max-width:870px;line-height:1.12;margin:35px 0 19px;letter-spacing:-.035em}
-    h2{font-size:clamp(1.55rem,3vw,2.25rem);line-height:1.22;letter-spacing:-.02em;margin:0 0 18px}h3{font-size:1.15rem}
-    .intro{font-size:1.15rem;color:#bfd2e8;max-width:810px;margin-bottom:25px}
-    .eyebrow{font-size:.8rem;text-transform:uppercase;letter-spacing:.18em;color:var(--cyan);font-weight:800}
-    .hero{padding:50px 0 68px}.pills{display:flex;gap:10px;flex-wrap:wrap}.pill{border:1px solid #547791;color:#cae7f4;border-radius:30px;padding:7px 13px;font-size:.81rem;text-decoration:none}
-    section{padding:70px 0;border-bottom:1px solid var(--border)}section:last-child{border:0}
-    p{color:#c0cee0}strong{color:#fff}.muted{color:var(--muted)}
-    .figure{background:#fff;border-radius:14px;padding:10px;margin-top:22px;box-shadow:0 20px 45px #0006}.figure img{display:block;width:100%;height:auto;border-radius:6px}
-    .caption{font-size:.88rem;line-height:1.45;color:var(--muted);margin-top:12px}
-    .stats,.cols{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
-    .tile{background:var(--panel);border:1px solid var(--border);padding:19px;border-radius:13px}.tile .num{font-size:2.15rem;line-height:1.2;color:var(--cyan);font-weight:800;font-variant-numeric:tabular-nums}.tile p{font-size:.9rem;margin:.5rem 0 0}.tile h3{margin:0 0 8px}
-    .formula{font-family:ui-monospace,monospace;background:#121d2c;border:1px solid #32506b;border-radius:10px;padding:18px;overflow:auto;color:#a9e8f0;white-space:pre-wrap}
-    pre{background:#101b2a;border:1px solid #36506a;border-radius:12px;padding:23px;overflow:auto;color:#b6eedf;font-size:.86rem;line-height:1.65}
-    .step{display:flex;gap:16px;margin:23px 0}.round{display:grid;place-items:center;background:#204457;color:var(--cyan);font-weight:bold;flex:0 0 35px;width:35px;height:35px;border-radius:50%}.step-content{flex:1}.step h3{margin:0 0 6px}.step p{margin:0}
-    table{border-collapse:collapse;width:100%;font-size:.93rem}th,td{text-align:left;padding:12px 15px;border-bottom:1px solid #35445a}th{color:#c8f4ee}td:nth-child(n+2){font-variant-numeric:tabular-nums}
-    footer{padding:45px 0;color:var(--muted);font-size:.88rem}
-    @media(max-width:720px){.stats,.cols{grid-template-columns:1fr}nav{align-items:flex-start}.hero{padding-top:23px}.wrap{padding:0 18px}section{padding:50px 0}h1{margin-top:20px}th,td{padding:10px 7px;font-size:.8rem}}
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Input Localization in Five Minutes · OpenSAE</title>
+<meta name="description" content="Seven interactive slides explaining why sparse autoencoders do not guarantee local features, with an optimal input scope curve and learned SAE experiments.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,500;1,8..60,600&family=DM+Sans:ital,wght@0,400;0,500;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+
+/* ===========================================
+   THEME TOKENS (Signal)
+   Gold is the only decorative accent. DELIBERATE DEVIATION: --pos/--neg are
+   DATA-ONLY encodings (feature up / feature down; margin eroded / restored),
+   inherited from the paper figures. They never style text or chrome.
+   =========================================== */
+:root {
+    --navy: #1C2644; --navy-alt: #232F55; --cream: #F0ECE3; --cream-alt: #E6E0D4;
+    --text-warm: #E2DCD0; --text-muted-dark: #8A96A8; --text-hint-dark: #5E6A80;
+    --ink: #1A2030; --text-muted-light: #5A6270; --text-hint-light: #8E949C;
+    --gold: #C8A870; --gold-deep: #9C7C43;
+    --border-dark: #2E3D5C; --border-light: #CAC4B4;
+    --pos-light: #B5462F; --neg-light: #2F6F73;
+    --pos-dark: #E0735A;  --neg-dark: #58A9AB;
+    --serif: 'Source Serif 4', 'Noto Serif SC', Georgia, serif;
+    --sans: 'DM Sans', 'Noto Sans SC', system-ui, sans-serif;
+    --mono: 'IBM Plex Mono', 'JetBrains Mono', monospace;
+    --pad-x: 144px; --pad-y: 56px; --gap-md: 24px; --gap-sm: 12px;
+    --ease-slide: cubic-bezier(0.77, 0, 0.175, 1); --ease-in: cubic-bezier(0.16, 1, 0.3, 1);
+    --stage-bg: #10162a;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --stage-bg: #0b1020; } }
+:root[data-theme="dark"] { --stage-bg: #0b1020; }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+#editToggle, #editHotzone { display: none !important; }
+
+/* ===========================================
+   FIXED 16:9 STAGE: MANDATORY BASE STYLES (frontend-slides viewport-base.css, verbatim)
+   =========================================== */
+html,
+body {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+.deck-viewport {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: var(--stage-bg, #000);
+}
+.deck-stage {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    transform-origin: 0 0;
+    background: var(--slide-bg, #fff);
+}
+.slide {
+    position: absolute;
+    inset: 0;
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    pointer-events: none;
+    background: var(--slide-bg, #fff);
+}
+.slide.active,
+.slide.visible {
+    visibility: visible;
+    opacity: 1;
+    pointer-events: auto;
+    z-index: 1;
+}
+img,
+video,
+canvas,
+svg {
+    max-width: 100%;
+    max-height: 100%;
+}
+.deck-controls {
+    position: fixed;
+    left: 50%;
+    bottom: 22px;
+    transform: translateX(-50%);
+    z-index: 1000;
+}
+@media print {
+    html,
+    body {
+        width: 1920px;
+        height: auto;
+        overflow: visible;
+        background: #fff;
+    }
+    .deck-viewport {
+        position: static;
+        overflow: visible;
+        background: #fff;
+    }
+    .deck-stage {
+        position: static;
+        width: auto;
+        height: auto;
+        transform: none !important;
+        background: none;
+    }
+    .slide {
+        position: relative;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 1920px;
+        height: 1080px;
+        break-after: page;
+        page-break-after: always;
+    }
+    .slide:last-child {
+        break-after: auto;
+        page-break-after: auto;
+    }
+    .deck-controls {
+        display: none !important;
+    }
+}
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.2s !important;
+    }
+}
+
+/* ===========================================
+   SURFACES + FRAME
+   =========================================== */
+.slide { transition: opacity 0.45s var(--ease-slide), visibility 0.45s; }
+.slide.dark  { --slide-bg: var(--navy);  background: var(--navy);  color: var(--text-warm); }
+.slide.light { --slide-bg: var(--cream); background: var(--cream); color: var(--ink); }
+.slide.dark::before {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+    background-size: 80px 80px;
+}
+.frame { position: relative; height: 100%; display: grid; grid-template-rows: auto 1fr auto; padding: var(--pad-y) var(--pad-x); }
+.chrome, .foot { display: flex; justify-content: space-between; align-items: center; font: 500 14px/1.4 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; }
+.chrome { padding-bottom: var(--gap-sm); margin-bottom: 22px; border-bottom: 1px solid; }
+.foot   { padding-top: var(--gap-sm); margin-top: 18px; border-top: 1px solid; letter-spacing: 0.12em; }
+.dark  .chrome, .dark  .foot { border-color: var(--border-dark);  color: var(--text-muted-dark); }
+.light .chrome, .light .foot { border-color: var(--border-light); color: var(--text-muted-light); }
+.nc { text-transform: none; letter-spacing: 0.02em; }
+.chr-right { display: flex; align-items: center; gap: 22px; }
+
+/* === ROADMAP (chrome left) === */
+.road { display: flex; gap: 22px; }
+.road span { opacity: 0.45; }
+.road span.on { opacity: 1; color: var(--gold); }
+.light .road span.on { color: var(--gold-deep); }
+
+/* ===========================================
+   TYPOGRAPHY
+   =========================================== */
+.kicker { font: 500 15px/1.4 var(--mono); letter-spacing: 0.18em; text-transform: uppercase; color: var(--gold); display: flex; align-items: center; gap: 16px; }
+.light .kicker { color: var(--gold-deep); }
+.kicker::after { content: ""; width: 36px; height: 1px; background: var(--gold); }
+.h1 { font: 600 96px/1.06 var(--serif); letter-spacing: -0.01em; }
+.h2 { font: 600 50px/1.14 var(--serif); letter-spacing: -0.005em; margin-top: 16px; }
+.h1 em, .h2 em, .h3 em { font-style: italic; color: var(--gold); font-weight: 500; }
+.light .h2 em, .light .h3 em { color: var(--gold-deep); }
+.h3 { font: 500 30px/1.25 var(--serif); }
+.lead { font: 400 25px/1.5 var(--sans); margin-top: 16px; }
+.body { font: 400 20px/1.6 var(--sans); }
+.caption { font: 400 16px/1.5 var(--sans); }
+.dark  .lead, .dark .caption { color: var(--text-muted-dark); }
+.light .lead, .light .caption { color: var(--text-muted-light); }
+.lead em, .body em, .caption em { font-family: var(--serif); font-style: italic; color: var(--gold); }
+.light .lead em, .light .body em, .light .caption em { color: var(--gold-deep); }
+.lead b, .body b { font-weight: 500; }
+.dark .lead b, .dark .body b { color: var(--text-warm); }
+.light .lead b, .light .body b { color: var(--ink); }
+.label { font: 500 14px/1.4 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; }
+.dark  .label { color: var(--text-muted-dark); }
+.light .label { color: var(--text-muted-light); }
+.stat { font: 600 72px/1 var(--serif); letter-spacing: -0.02em; color: var(--gold); }
+.light .stat { color: var(--gold-deep); }
+.stat small { font: 500 20px/1 var(--mono); letter-spacing: 0.02em; margin-left: 10px; }
+.dark .stat small { color: var(--text-muted-dark); }
+.light .stat small { color: var(--text-muted-light); }
+.math { font-family: var(--serif); font-style: italic; }
+.math sub, .math sup { font-size: 0.66em; }
+.mono { font-family: var(--mono); }
+
+/* === ENTRANCE ANIMATION === */
+.reveal { opacity: 0; transform: translateY(20px); transition: opacity 0.7s var(--ease-in), transform 0.7s var(--ease-in); }
+.slide.visible .reveal { opacity: 1; transform: none; }
+.slide.visible .d1 { transition-delay: 0.06s; } .slide.visible .d2 { transition-delay: 0.14s; }
+.slide.visible .d3 { transition-delay: 0.22s; } .slide.visible .d4 { transition-delay: 0.30s; }
+.slide.visible .d5 { transition-delay: 0.38s; }
+
+/* ===========================================
+   SHARED CONTROLS (toggles, chips, buttons, sliders)
+   =========================================== */
+.seg { display: inline-flex; border: 1px solid; }
+.dark .seg { border-color: var(--border-dark); } .light .seg { border-color: var(--border-light); }
+.seg button { font: 500 14px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; padding: 13px 18px; background: transparent; border: 0; border-right: 1px solid; cursor: pointer; }
+.dark .seg button { color: var(--text-muted-dark); border-color: var(--border-dark); }
+.light .seg button { color: var(--text-muted-light); border-color: var(--border-light); }
+.seg button:last-child { border-right: 0; }
+.dark .seg button[aria-pressed="true"] { background: var(--gold); color: var(--navy); }
+.light .seg button[aria-pressed="true"] { background: var(--ink); color: var(--cream); }
+.chipset { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 500 14px/1 var(--mono); letter-spacing: 0.06em; padding: 11px 14px; background: transparent; border: 1px solid; cursor: pointer; }
+.dark .chip { color: var(--text-warm); border-color: var(--border-dark); }
+.light .chip { color: var(--ink); border-color: var(--border-light); }
+.dark .chip[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); box-shadow: inset 0 -3px 0 var(--gold); }
+.light .chip[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 -3px 0 var(--ink); }
+.btn { font: 500 14px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; padding: 14px 20px; border: 1px solid var(--gold); color: var(--gold); background: transparent; cursor: pointer; }
+.light .btn { border-color: var(--ink); color: var(--ink); }
+.btn.primary { background: var(--gold); color: var(--navy); }
+.light .btn.primary { background: var(--ink); color: var(--cream); }
+.btn:disabled { opacity: 0.4; cursor: not-allowed; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 26px; background: transparent; cursor: pointer; }
+input[type=range]::-webkit-slider-runnable-track { height: 2px; background: #56668C; }
+input[type=range]::-moz-range-track { height: 2px; background: #56668C; }
+.light input[type=range]::-webkit-slider-runnable-track { background: var(--border-light); }
+.light input[type=range]::-moz-range-track { background: var(--border-light); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--gold); margin-top: -9px; border: 0; }
+input[type=range]::-moz-range-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--gold); border: 0; }
+.light input[type=range]::-webkit-slider-thumb { background: var(--gold-deep); }
+.light input[type=range]::-moz-range-thumb { background: var(--gold-deep); }
+input[type=range]:disabled { opacity: 0.35; cursor: not-allowed; }
+.hair { border-top: 1px solid; }
+.dark .hair { border-color: var(--border-dark); } .light .hair { border-color: var(--border-light); }
+.sw { width: 16px; height: 12px; display: inline-block; vertical-align: middle; margin-right: 8px; }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 26px; }
+
+/* === DETAILS DRAWER (press D) === */
+.details-btn { font: 500 13px/1 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; background: transparent; border: 1px solid; padding: 8px 12px; cursor: pointer; }
+.dark .details-btn { color: var(--gold); border-color: var(--gold); } .light .details-btn { color: var(--gold-deep); border-color: var(--gold-deep); }
+.drawer {
+    position: absolute; top: 0; right: 0; bottom: 0; width: 700px; z-index: 20; padding: 64px 64px 56px;
+    transform: translateX(102%); transition: transform 0.45s var(--ease-in); overflow: hidden; display: flex; flex-direction: column;
+}
+.dark .drawer { background: #161E38; border-left: 1px solid var(--border-dark); }
+.light .drawer { background: #E8E3D7; border-left: 1px solid var(--border-light); }
+.slide.drawer-open .drawer { transform: none; }
+.drawer .h3 { margin: 14px 0 10px; }
+.drawer .body { font-size: 18px; line-height: 1.55; }
+.drawer .body p + p { margin-top: 10px; }
+.drawer table { border-collapse: collapse; width: 100%; font: 400 16px/1.3 var(--mono); margin-top: 10px; }
+.drawer td, .drawer th { padding: 6px 8px; text-align: right; border-bottom: 1px solid; }
+.drawer th:first-child, .drawer td:first-child { text-align: left; }
+.dark .drawer td, .dark .drawer th { border-color: var(--border-dark); }
+.light .drawer td, .light .drawer th { border-color: var(--border-light); }
+.drawer th { font-weight: 500; letter-spacing: 0.06em; }
+.drawer .close { position: absolute; top: 22px; right: 26px; }
+.drawer .src { margin-top: auto; padding-top: 14px; font: 400 13px/1.45 var(--mono); letter-spacing: 0.02em; }
+.dark .drawer .src { color: var(--text-hint-dark); } .light .drawer .src { color: var(--text-hint-light); }
+
+/* ===========================================
+   SLIDE 0 — COVER
+   =========================================== */
+.cover { position: relative; height: 100%; padding: 104px var(--pad-x) 80px; display: flex; flex-direction: column; }
+.cover .h1 { margin-top: 30px; max-width: 1520px; }
+.cover .lead { margin-top: 30px; max-width: 1300px; font-size: 28px; }
+.route { margin-top: auto; display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--border-dark); }
+.route > div { padding: 22px 22px 0 0; }
+.route .n { font: 600 44px/1 var(--serif); color: var(--gold); }
+.route .t { margin-top: 10px; font: 400 21px/1.35 var(--sans); color: var(--text-warm); }
+.byline { margin-top: 36px; display: flex; justify-content: space-between; font: 500 15px/1.4 var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-muted-dark); }
+.byline b { color: var(--text-warm); font-weight: 500; }
+.keyhint { position: absolute; top: 48px; right: var(--pad-x); font: 500 13px/1.6 var(--mono); letter-spacing: 0.12em; color: var(--text-hint-dark); text-align: right; text-transform: uppercase; }
+.keyhint kbd { font-family: var(--mono); border: 1px solid var(--border-dark); padding: 1px 6px; color: var(--text-muted-dark); }
+
+/* ===========================================
+   SLIDE 1 — THE PROBLEM
+   =========================================== */
+.p1 { display: grid; grid-template-columns: 840px 1fr; gap: 70px; min-height: 0; }
+.pipe { margin-top: 26px; display: grid; grid-template-columns: repeat(9, auto); align-items: center; justify-content: start; gap: 0; }
+.pipe .box { font: 500 14px/1.25 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; text-align: center; padding: 12px 12px; border: 1px solid var(--border-light); color: var(--text-muted-light); min-width: 132px; }
+.pipe .box.hl { border-color: var(--ink); color: var(--ink); }
+.pipe .arr { color: var(--text-hint-light); padding: 0 8px; font: 400 20px/1 var(--mono); }
+.pipe .box + .arr { }
+.promptbox { margin-top: 26px; border-top: 1px solid var(--border-light); padding-top: 16px; }
+.prompt-text { margin-top: 10px; font: 400 27px/1.4 var(--serif); min-height: 76px; }
+.prompt-text mark { background: rgba(156,124,67,0.16); color: var(--gold-deep); font-style: italic; padding: 0 3px; }
+.p1 .chipset { margin-top: 14px; }
+.p1-right { border-left: 1px solid var(--border-light); padding-left: 60px; display: flex; flex-direction: column; }
+.p1-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; margin-top: 22px; }
+.p1-stats .caption { margin-top: 8px; }
+.dots { margin-top: 30px; display: grid; grid-template-columns: repeat(20, 25px); gap: 8px; }
+.dot { width: 25px; height: 25px; border-radius: 50%; background: #CFC8B8; transition: background 0.4s, transform 0.4s; }
+.dot.flip { background: var(--pos-light); transform: scale(1.08); }
+.question { margin-top: 70px; font: italic 400 26px/1.4 var(--serif); color: var(--gold-deep); }
+
+/* ===========================================
+   SLIDE 2 — THE SELECTOR (guess, reveal, switch rule)
+   =========================================== */
+.sel-grid { display: grid; grid-template-columns: 900px 1fr; gap: 70px; min-height: 0; }
+.sel-left .h2 { font-size: 44px; }
+.task { margin-top: 12px; font: 400 21px/1.5 var(--sans); color: var(--text-muted-dark); min-height: 64px; }
+.task b { color: var(--text-warm); font-weight: 500; }
+table.delta { margin-top: 10px; border-collapse: separate; border-spacing: 6px; margin-left: -6px; }
+table.delta th, table.delta td { text-align: center; }
+table.delta thead th { padding: 0; }
+.rowlab { font: 500 14px/1 var(--mono); letter-spacing: 0.08em; color: var(--text-muted-dark); text-align: right !important; padding-right: 10px !important; white-space: nowrap; }
+.fhead { width: 104px; height: 46px; font: italic 500 24px/1 var(--serif); color: var(--text-warm); background: transparent; border: 1px solid var(--border-dark); cursor: pointer; position: relative; transition: background 0.3s, color 0.3s; }
+.fhead.guessed { border-color: var(--gold); color: var(--gold); }
+.fhead.keep { background: var(--gold); color: var(--navy); border-color: var(--gold); }
+.fhead .mk { position: absolute; top: -12px; right: -10px; font: 600 15px/1 var(--mono); padding: 4px 6px; background: var(--navy); border: 1px solid var(--border-dark); }
+.fhead .mk.ok { color: var(--gold); } .fhead .mk.no { color: var(--text-muted-dark); }
+.fhead .mk:empty { display: none; }
+td.cell { width: 104px; height: 48px; font: 500 16px/1 var(--mono); color: var(--text-warm); background: var(--navy-alt); transition: background 0.35s, color 0.35s, box-shadow 0.3s, opacity 0.3s; }
+td.cell.none { color: var(--text-hint-dark); }
+td.stat-cell { font: 500 17px/1 var(--mono); color: var(--text-muted-dark); height: 34px; transition: box-shadow 0.3s; }
+td.stat-cell.bad { color: var(--pos-dark); text-decoration: line-through; text-decoration-thickness: 1px; }
+td.stat-cell.good { color: var(--text-warm); }
+td.verdict { height: 40px; font: 500 13px/1 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-hint-dark); border-top: 1px solid var(--border-dark); transition: background 0.3s, color 0.3s; }
+td.verdict.inS { color: var(--navy); background: var(--gold); }
+/* kept columns: gold frame on every cell of the column; dropped columns fade */
+table.delta td.keep { box-shadow: inset 0 0 0 3px var(--gold); }
+table.delta.revealed td.cell.drop { opacity: 0.38; }
+.hide-stats .statrow td.stat-cell, .hide-stats td.verdict { color: transparent !important; background: transparent !important; text-decoration: none; box-shadow: none !important; }
+.sel-right { border-left: 1px solid var(--border-dark); padding-left: 56px; display: flex; flex-direction: column; min-height: 0; }
+.rule-seg { margin-top: 12px; }
+.rule-seg button { padding: 15px 22px; font-size: 15px; }
+.rule-seg button:disabled { opacity: 0.35; cursor: not-allowed; }
+.rule-desc { margin-top: 16px; font: 400 21px/1.5 var(--sans); color: var(--text-warm); min-height: 96px; }
+.result { margin-top: 26px; border-top: 1px solid var(--border-dark); padding-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px 26px; }
+.result .stat { font-size: 64px; }
+.result .setline { font: italic 500 32px/1.2 var(--serif); color: var(--text-warm); margin-top: 8px; }
+.btns { display: flex; gap: 12px; margin-top: auto; padding-top: 14px; }
+
+/* ===========================================
+   SLIDE 3 — THE PATTERN (ATLAS)
+   =========================================== */
+.atlas { display: grid; grid-template-columns: 1190px 1fr; gap: 60px; min-height: 0; }
+#atlasSvg { width: 1190px; height: 590px; margin-top: 16px; overflow: visible; }
+.side { border-left: 1px solid var(--border-light); padding-left: 50px; display: flex; flex-direction: column; }
+.side .blk { border-top: 1px solid var(--border-light); padding: 18px 0 20px; }
+.side .blk:first-child { border-top: 0; padding-top: 4px; }
+.side .stat { font-size: 64px; }
+.side .caption { margin-top: 8px; max-width: 470px; }
+.side .stat small.blockci { display: block; margin: 8px 0 0; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--cream); font: 500 15px/1.35 var(--mono); padding: 9px 13px; opacity: 0; transition: opacity 0.15s; z-index: 5; white-space: nowrap; }
+
+/* ===========================================
+   SLIDE 4 — THE ACCOUNTING
+   =========================================== */
+.acc { display: grid; grid-template-columns: 700px 1fr; gap: 70px; min-height: 0; }
+.acc-left { display: flex; flex-direction: column; }
+.eq { margin-top: 34px; border-top: 1px solid var(--border-dark); padding-top: 18px; }
+.eq .line { font: italic 400 34px/1.35 var(--serif); color: var(--text-warm); margin-top: 8px; }
+.eq .line b { font-style: normal; font-weight: 500; color: var(--gold); }
+.eq .line.small { font-size: 24px; color: var(--text-muted-dark); }
+.acc-stat { margin-top: 64px; border-top: 1px solid var(--border-dark); padding-top: 18px; }
+.acc-stat .stat { font-size: 92px; }
+.acc-stat .caption { margin-top: 10px; font-size: 19px; max-width: 620px; }
+.acc-right { border-left: 1px solid var(--border-dark); padding-left: 56px; display: flex; flex-direction: column; }
+#waterSvg { width: 100%; height: 540px; margin-top: 8px; overflow: visible; }
+.acc-ctrl { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.verdictline { font: 500 17px/1.4 var(--mono); letter-spacing: 0.12em; text-transform: uppercase; margin-top: 12px; min-height: 24px; }
+
+/* ===========================================
+   SLIDE 5 — THE PAYOFF (REVIEW)
+   One slider; dragging it sweeps a review line and shaded region across the scatter
+   and resizes the three comparison bars.
+   =========================================== */
+.pay { display: grid; grid-template-columns: 1040px 1fr; gap: 60px; min-height: 0; }
+#scatterSvg { width: 1040px; height: 600px; margin-top: 4px; overflow: visible; }
+.pay-right { border-left: 1px solid var(--border-light); padding-left: 52px; display: flex; flex-direction: column; }
+.pay-right .seg button { padding: 14px 18px; font-size: 14px; }
+.ctrl { margin-top: 16px; }
+.ctrl-top { display: flex; justify-content: space-between; align-items: baseline; }
+.ctrl-top .val { font: 500 24px/1 var(--mono); color: var(--gold-deep); }
+.bars { margin-top: 56px; border-top: 1px solid var(--border-light); padding-top: 16px; }
+.bar-row { display: grid; grid-template-columns: 1fr; gap: 6px; margin-top: 16px; opacity: 0.55; transition: opacity 0.3s; }
+.bar-row.on { opacity: 1; }
+.bar-row .bl { font: 400 18px/1.2 var(--sans); color: var(--ink); display: flex; justify-content: space-between; }
+.bar-row .bv { font: 600 26px/1 var(--serif); color: var(--gold-deep); }
+.bar-row .bt { height: 16px; background: var(--cream-alt); position: relative; }
+.bar-row .bf { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink); transition: width 0.25s ease-out; }
+.bar-row.on .bf { background: var(--gold-deep); }
+
+/* ===========================================
+   SLIDE 6 — TAKEAWAYS
+   =========================================== */
+.take { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0; margin-top: 56px; border-top: 1px solid var(--border-dark); }
+.take > div { padding: 26px 40px 0 0; }
+.take > div + div { padding-left: 40px; border-left: 1px solid var(--border-dark); }
+.take .n { font: 600 56px/1 var(--serif); color: var(--gold); }
+.take .h3 { margin-top: 14px; }
+.take .body { margin-top: 14px; color: var(--text-muted-dark); font-size: 22px; }
+.notclaim { margin-top: 64px; display: grid; grid-template-columns: 1fr 1fr; gap: 50px; border-top: 1px solid var(--border-dark); padding-top: 22px; }
+.dash { list-style: none; margin-top: 10px; }
+.dash li { position: relative; padding-left: 30px; font: 400 20px/1.5 var(--sans); color: var(--text-muted-dark); margin-top: 6px; }
+.dash li::before { content: "—"; position: absolute; left: 0; font-family: var(--mono); color: var(--gold); }
+
+/* ===========================================
+   PRESENTER NOTES (press N) / HELP (press ?) — outside the stage
+   =========================================== */
+aside.notes { display: none; }
+/* Talk track: every content element carries data-say="N"; the notes explain N in order.
+   Pressing N shows the notes panel AND these numbered badges on the slide. */
+[data-say] { position: relative; }
+body.track .slide.active [data-say]::after {
+    content: attr(data-say); position: absolute; top: -4px; left: -44px; z-index: 30;
+    width: 30px; height: 30px; border-radius: 50%; background: var(--gold); color: var(--navy);
+    font: 600 16px/30px var(--mono); text-align: center; letter-spacing: 0; text-transform: none;
+    box-shadow: 0 0 0 3px rgba(12,17,33,0.35); pointer-events: none;
+}
+#notesPanel ol.track { list-style: none; margin: 4px 0 0; }
+#notesPanel ol.track li { position: relative; padding-left: 38px; margin-top: 10px; }
+#notesPanel ol.track li::before { content: attr(data-for); position: absolute; left: 0; top: 1px; width: 26px; height: 26px; border-radius: 50%; background: var(--gold); color: var(--navy); font: 600 14px/26px var(--mono); text-align: center; }
+#notesPanel { position: fixed; top: 0; right: 0; bottom: 0; width: clamp(340px, 30vw, 620px); overflow: auto; z-index: 1002; background: #0C1121; color: #E2DCD0; border-left: 2px solid var(--gold); padding: 20px 24px 84px; font: 400 16px/1.55 var(--sans); display: none; }
+#notesPanel.show { display: block; }
+#notesPanel h4 { font: 500 12px/1.4 var(--mono); letter-spacing: 0.16em; text-transform: uppercase; color: var(--gold); margin: 10px 0 4px; }
+#notesPanel p { max-width: none; }
+#notesPanel .zh { color: #B9C2D0; }
+#notesPanel .time { float: right; font: 500 12px/1 var(--mono); color: #8A96A8; letter-spacing: 0.1em; }
+#helpPanel { position: fixed; inset: 0; z-index: 1003; background: rgba(12,17,33,0.86); display: none; align-items: center; justify-content: center; }
+#helpPanel.show { display: flex; }
+#helpPanel .card { background: var(--cream); color: var(--ink); padding: 26px 34px; font: 400 15px/1.8 var(--mono); min-width: 360px; }
+#helpPanel kbd { display: inline-block; min-width: 64px; font-weight: 500; }
+
+/* === DECK CONTROLS === */
+.deck-controls { left: auto; right: 18px; bottom: 18px; transform: none; transition: opacity 0.4s; display: flex; align-items: center; gap: 10px; font: 500 13px/1 var(--mono); letter-spacing: 0.14em; color: #b9bfcc; background: rgba(16,22,42,0.78); padding: 8px 10px; }
+.deck-controls button { background: transparent; border: 1px solid #3a4666; color: #d9d4c8; min-width: 34px; height: 30px; cursor: pointer; font: 500 13px/1 var(--mono); padding: 0 8px; }
+.deck-controls.idle { opacity: 0; pointer-events: none; }
+body.notes-on .deck-controls { bottom: 18px; right: 18px; }
+.progress { position: fixed; left: 0; top: 0; height: 3px; background: var(--gold); z-index: 1001; transition: width 0.4s var(--ease-slide); }
+.rotate-hint { display: none; position: fixed; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1001; font: 500 12px/1.3 var(--mono); letter-spacing: 0.1em; color: #d9d4c8; background: rgba(16,22,42,0.85); padding: 8px 12px; text-align: center; }
+@media (orientation: portrait) and (max-width: 820px) { .rotate-hint { display: block; } }
+
+/* === INLINE EDITING (press E) === */
+.edit-hotzone { position: fixed; top: 0; left: 0; width: 80px; height: 80px; z-index: 10000; cursor: pointer; }
+.edit-toggle { position: fixed; top: 16px; left: 16px; z-index: 10001; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; background: var(--gold); color: var(--navy); border: 0; font: 500 12px/1 var(--mono); letter-spacing: 0.14em; padding: 10px 12px; cursor: pointer; }
+.edit-toggle.show, .edit-toggle.active { opacity: 1; pointer-events: auto; }
+body.editing [data-editable] { outline: 1px dashed var(--gold); outline-offset: 4px; }
+
+/* ===========================================
+   MATH (native MathML), SECTION LINKS, BUTTON RULES (talk_v5)
+   =========================================== */
+math { font-family: "Cambria Math", "STIX Two Math", "Latin Modern Math", "STIX Math", math, serif; font-size: 1.04em; }
+.mline { margin: 8px 0; }
+.mline math { font-size: 1.12em; }
+.eq .mline { font-size: 26px; color: var(--text-warm); margin: 12px 0 4px; }
+.result .mline { font-size: 22px; color: var(--text-warm); margin-top: 4px; }
+.defs .mline { font-size: 22px; margin: 6px 0; }
+.dark .defs .mline { color: var(--text-warm); }
+.light .defs .mline, .light .blk .mline { color: var(--ink); }
+.blk .mline { font-size: 20px; margin: 10px 0 6px; }
+.p1-right .defs .mline { font-size: 21px; color: var(--ink); }
+.drawer .mline { font-size: 21px; margin: 10px 0; }
+.defs .caption { margin-top: 6px; }
+.sel-right .defs { border-bottom: 1px solid var(--border-dark); padding-bottom: 14px; margin-bottom: 18px; }
+#ruleBox { margin-bottom: 4px; }
+/* Only things that can be clicked look like buttons. */
+.pipe .box, .pipe .box.hl { border: 0; padding: 6px 2px; min-width: 0; }
+.pipe .box.hl { color: var(--ink); font-weight: 600; }
+.pipe .arr { padding: 0 14px; }
+.btns.big { margin: 4px 0 18px; padding-top: 0; gap: 16px; }
+.btns.big .btn { font-size: 19px; padding: 18px 34px; letter-spacing: 0.12em; }
+.acc-ctrl.btns.big { margin-top: 24px; }
+/* Section links: the chrome roadmap and the cover route jump to their slide. */
+.road { gap: 6px; }
+.road .nav { background: none; border: 0; padding: 4px 10px; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; opacity: 0.6; cursor: pointer; }
+.road .nav:first-child { padding-left: 0; }
+.road .nav:hover { opacity: 1; text-decoration: underline; text-underline-offset: 5px; }
+.road .nav.on { opacity: 1; color: var(--gold); }
+.light .road .nav.on { color: var(--gold-deep); }
+.route .ri { background: none; border: 0; text-align: left; padding: 22px 22px 0 0; font: 400 23px/1.35 var(--sans); color: var(--text-warm); cursor: pointer; }
+.route .ri:hover { color: var(--gold); text-decoration: underline; text-underline-offset: 6px; }
+.take .h3 { margin-top: 0; }
+.nb { white-space: nowrap; }
+.dash li::before { content: "•"; }
+
+
+/* Input Localization content, on the shared SAR/RSS Signal design system. */
+.local-main{display:flex;flex-direction:column;height:100%;min-height:0;}
+.local-main .h2{max-width:1530px;font-size:50px;line-height:1.16;flex:0 0 auto;}
+.local-main .sub{font:400 24px/1.45 var(--sans);margin:13px 0 25px;max-width:1490px;}
+.local-main .sub .important{font-weight:600;}
+.dark .local-main .sub{color:var(--text-muted-dark);}
+.light .local-main .sub{color:var(--text-muted-light);}
+.local-grid{display:grid;grid-template-columns:1fr 1fr;gap:62px;flex:1;min-height:0;margin-top:15px;}
+.local-grid.wide{grid-template-columns:1.17fr .83fr;}
+.local-grid.narrow{grid-template-columns:.87fr 1.13fr;}
+.local-panel{min-width:0;border-top:1px solid;padding-top:20px;}
+.dark .local-panel{border-color:var(--border-dark);}
+.light .local-panel{border-color:var(--border-light);}
+.local-eyebrow{font:500 15px/1.3 var(--mono);letter-spacing:.13em;text-transform:uppercase;}
+.dark .local-eyebrow{color:var(--text-muted-dark);}
+.light .local-eyebrow{color:var(--text-muted-light);}
+.local-choice{display:inline-flex;margin-top:17px;border:1px solid;}
+.dark .local-choice{border-color:var(--border-dark);}
+.light .local-choice{border-color:var(--border-light);}
+.local-choice button{border:0;border-right:1px solid;font:500 16px/1.1 var(--mono);padding:17px 25px;background:transparent;color:inherit;cursor:pointer;}
+.local-choice button:last-child{border-right:0;}
+.dark .local-choice button{border-color:var(--border-dark);}
+.light .local-choice button{border-color:var(--border-light);}
+.dark .local-choice button[aria-pressed="true"]{background:var(--gold);color:var(--navy);}
+.light .local-choice button[aria-pressed="true"]{background:var(--ink);color:var(--cream);}
+.local-big{font:600 87px/1 var(--serif);color:var(--gold);letter-spacing:-.03em;}
+.light .local-big{color:var(--gold-deep);}
+.local-stats{display:grid;grid-template-columns:1fr 1fr;gap:27px;margin-top:26px;}
+.local-stats .local-big{font-size:72px;}
+.local-stats .caption{margin-top:8px;}
+.local-pills{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-top:33px;}
+.local-pill{border:1px solid;padding:18px 22px;font:500 25px/1.2 var(--serif);min-width:185px;text-align:center;}
+.dark .local-pill{border-color:var(--border-dark);}
+.light .local-pill{border-color:var(--border-light);}
+.local-arrow{font:500 40px/1 var(--serif);color:var(--gold);}
+.light .local-arrow{color:var(--gold-deep);}
+.local-callout{border-left:4px solid var(--gold);padding:15px 24px;font:400 24px/1.43 var(--sans);margin-top:31px;}
+.light .local-callout{border-color:var(--gold-deep);}
+.local-callout b{font-weight:600;}
+.local-table{border-collapse:collapse;width:100%;margin-top:18px;font:500 25px/1.1 var(--mono);}
+.local-table th,.local-table td{padding:23px 10px;border-bottom:1px solid var(--border-light);text-align:center;}
+.local-table th{font:500 16px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;}
+.local-table tr:nth-child(even) td{background:rgba(60,52,40,.045);}
+.local-table td.changed{color:var(--pos-light);font-weight:600;}
+.local-formula{font:400 29px/1.55 var(--serif);margin-top:20px;border-left:3px solid var(--gold);padding-left:22px;}
+.local-formula small{display:block;margin-top:8px;font:400 19px/1.4 var(--sans);opacity:.76;}
+.local-chart{display:block;width:100%;height:440px;}
+.local-axis{font:500 18px var(--mono);}
+.dark .local-axis{fill:var(--text-muted-dark);}
+.light .local-axis{fill:var(--text-muted-light);}
+.local-slider{display:block;width:100%;height:35px;accent-color:var(--gold);margin:15px 0;}
+.local-summary{display:grid;grid-template-columns:1fr 1fr;gap:25px;margin-top:22px;}
+.local-summary .stat{font-size:60px;}
+.local-summary .caption{margin-top:8px;}
+.local-image{display:block;width:100%;height:485px;object-fit:contain;background:white;padding:12px;border:1px solid var(--border-light);}
+.local-bars{display:grid;grid-template-columns:100px 1fr 85px;align-items:center;gap:18px;margin-top:30px;}
+.local-bars .name{font:500 31px/1.1 var(--serif);}
+.local-bars .bar-back{height:48px;background:rgba(26,32,48,.075);overflow:hidden;}
+.local-bars .bar{height:100%;background:var(--gold-deep);}
+.local-bars .val{font:500 23px var(--mono);}
+.local-maps{display:grid;grid-template-columns:180px 1fr 150px;gap:18px 20px;align-items:center;margin-top:27px;}
+.local-maps .name{font:500 22px/1.25 var(--sans);}
+.local-maps .track{height:57px;background:rgba(255,255,255,.07);}
+.local-maps .fill{height:100%;background:#60718F;transition:background .25s;}
+.local-maps .val{font:600 35px var(--serif);}
+.local-maps .selected .fill{background:var(--gold);}
+.local-maps .selected .val{color:var(--gold);}
+.local-map-row{display:contents;}
+.local-seeds{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px;}
+.local-seeds span{padding:13px 16px;background:var(--navy-alt);font:500 22px var(--mono);}
+.local-source{margin-top:15px;font:400 17px/1.4 var(--sans);opacity:.7;}
+.local-source a{color:inherit;}
+.local-code{font:500 21px/1.65 var(--mono);border:1px solid var(--border-dark);padding:19px 24px;background:#161F37;color:var(--text-warm);margin-top:18px;white-space:pre-wrap;}
+.local-takes{display:grid;grid-template-columns:repeat(3,1fr);gap:40px;margin-top:45px;}
+.local-take{border-top:2px solid var(--gold);padding-top:24px;}
+.local-take .h3{font-size:31px;line-height:1.24;min-height:82px;}
+.local-take .body{margin-top:15px;font-size:22px;line-height:1.44;color:var(--text-muted-dark);}
+.local-linkrow{display:flex;gap:16px;margin-top:27px;flex-wrap:wrap;}
+.local-linkrow a{border:1px solid var(--border-dark);padding:14px 20px;color:var(--gold);font:500 16px var(--mono);text-decoration:none;}
+.local-linkrow a:hover{color:var(--navy);background:var(--gold);}
+.local-cover .h1{font-size:90px;max-width:1590px;line-height:1.08;}
+.local-cover .lead{font-size:29px;max-width:1420px;}
+.local-cover .route .ri{font-size:22px;}
+.local-technical{font:400 20px/1.55 var(--sans);}
+.local-technical p{margin-top:17px;}
+.local-technical .formula{font:400 28px/1.55 var(--serif);padding:15px 0;}
+.local-technical img{margin-top:20px;background:white;padding:10px;width:100%;max-height:390px;object-fit:contain;}
+.local-technical a{color:var(--gold);}
+.light .local-technical a{color:var(--gold-deep);}
+.local-notes{margin-top:13px;font:400 18px/1.45 var(--sans);opacity:.8;}
+@media print{.local-image,.local-bars .bar,.local-maps .fill{print-color-adjust:exact;}}
+
+</style>
 </head>
 <body>
-  <header>
-    <div class="wrap">
-      <nav><a class="brand" href="https://github.com/AtheavenMa/SAE-Input-Localization">Open<span>SAE</span> · LOCALIZE</a><div><a href="#question">Question</a><a href="#measure">Measure</a><a href="#evidence">Evidence</a><a href="#run">Try it</a></div></nav>
-      <div class="hero">
-        <div class="eyebrow">OpenSAE · 5-minute tutorial</div>
-        <h1>Sparse features can reconstruct well without depending on local inputs.</h1>
-        <p class="intro">SAE Input Localization distinguishes what a frozen sparse autoencoder <strong>represents</strong> from which controlled input variables actually determine its features.</p>
-        <div class="pills"><a class="pill" href="https://github.com/AtheavenMa/SAE-Input-Localization#readme">Project README ↗</a><a class="pill" href="https://github.com/AtheavenMa/SAE-Input-Localization/blob/main/README_cn.md">中文 README ↗</a><a class="pill" href="#run">Run the offline demo ↓</a></div>
-      </div>
-    </div>
-  </header>
-  <main class="wrap">
-    <section id="question">
-      <div class="eyebrow">01 · Central question</div>
-      <h2>Can the same SAE have different input dependencies?</h2>
-      <p>Yes. A representation-only objective sees the same distribution of hidden states regardless of how those states were paired with the inputs. Permuting that pairing can preserve every hidden-state and activation sample while changing the controlled input factors a feature depends on.</p>
-      <div class="figure"><img src="../assets/figures/fig1.png" alt="Same representation samples and same SAE, but the required scope budget increases under XOR mixing" /></div>
-      <div class="caption">Figure 1. The same representation samples and frozen SAE support different input-dependency budgets under bijective input maps.</div>
-    </section>
-    <section id="measure">
-      <div class="eyebrow">02 · Definitions</div>
-      <h2>Keep the SAE fixed, change only which inputs are allowed to explain each feature.</h2>
-      <div class="cols">
-        <div class="tile"><h3>Feature scope</h3><p>Aⱼ is a set of controlled input variables. It is the set used to predict activation zⱼ.</p></div>
-        <div class="tile"><h3>Cost</h3><p>Count each input-feature dependency separately. B(A)=Σⱼ |Aⱼ|.</p></div>
-        <div class="tile"><h3>Residual</h3><p>Γ measures activation variance left after using only the selected inputs for each feature.</p></div>
-      </div>
-      <div class="formula">L_z(B) = min{ Γ_z(A) : Σⱼ |Aⱼ| ≤ B }
-B_z(τ) = min{ B : L_z(B) ≤ τ }</div>
-      <p>The first curve asks how much unexplained feature variance remains under a fixed budget. The inverse asks how many total input-feature incidences are needed to reach a required fidelity. Reconstruction error and SAE sparsity cannot answer this question because they do not specify the input-to-sample correspondence.</p>
-      <div class="figure"><img src="../assets/figures/fig2.png" alt="Finite-field exact input-scope curves by interaction order" /></div>
-      <div class="caption">Theorem construction: with n=4 and p=7, every order uses the same representation distribution and the same frozen SAE; exact localization cost increases in proportion to the interaction order.</div>
-    </section>
-    <section id="evidence">
-      <div class="eyebrow">03 · Controlled evidence</div>
-      <h2>Five trained SAEs. Same codes, higher scope budgets.</h2>
-      <p>Each seed trains a small representation model and a 24-to-48 overcomplete SAE on 192 of 256 Boolean states. The encoders and decoders are then frozen and evaluated with three bijective input maps on the full grid.</p>
-      <div class="stats">
-        <div class="tile"><div class="num">136.0</div><p>Identity map, mean budget at 90% explained activation variance</p></div>
-        <div class="tile"><div class="num">192.4</div><p>XOR arity 3, an increase of 41.5%</p></div>
-        <div class="tile"><div class="num">202.8</div><p>XOR arity 5, an increase of 49.1%</p></div>
-      </div>
-      <div class="figure"><img src="../assets/figures/fig3.png" alt="Learned SAE scope curves and paired resampling recovery" /></div>
-      <div class="caption">Figure 3. Paired interventions approach the exact optimal curve as the sample size increases.</div>
-      <h3>How strong are the lower bounds?</h3>
-      <p>The representation-level spectral bound is coarse; the feature-order bound is tighter because it uses the learned activation structure.</p>
-      <div class="figure"><img src="../assets/figures/fig4.png" alt="Spectral and feature-order lower bounds compared with exact budgets" /></div>
-      <div class="caption">Appendix Figure 4. The strength of a certificate depends on the information it retains.</div>
-    </section>
-    <section id="run">
-      <div class="eyebrow">04 · Reproduce in minutes</div>
-      <h2>Run the scope-curve demo.</h2>
-      <div class="step"><div class="round">1</div><div class="step-content"><h3>Install the package</h3><p>Only NumPy is required for the full-grid core analysis and built-in offline demo.</p></div></div>
-      <div class="step"><div class="round">2</div><div class="step-content"><h3>Recompute all five-seed curves</h3><p>The demo computes and plots each optimal scope curve from the released activation arrays.</p></div></div>
-      <div class="step"><div class="round">3</div><div class="step-content"><h3>Use your own controlled data</h3><p>Provide complete frozen SAE codes in Boolean input bitmask row order and a declared number of factors.</p></div></div>
-      <pre>python -m pip install -e .
-python demo/demo.py
-python experiments/exact_construction/verify_family.py
-python -m pytest -q
+<div id="progress" class="progress"></div>
+<div class="rotate-hint">Rotate your phone for a larger view</div>
+<div class="deck-viewport"><main id="deckStage" class="deck-stage">
+<section class="slide dark active visible" data-title="Cover">
+<div class="cover local-cover">
+<div class="kicker reveal d1">OpenSAE · 5-minute tutorial</div>
+<h1 class="h1 reveal d2">Sparse autoencoders do not guarantee <em>local features</em></h1>
+<p class="lead reveal d3" data-say="1">A frozen SAE can produce exactly the same feature activations, yet require different input variables to explain them. How can we measure that difference?</p>
+<nav class="route reveal d4" data-say="2" aria-label="Sections">
+<button class="ri" data-go="2">Same SAE, different dependencies</button>
+<button class="ri" data-go="3">An optimal input scope curve</button>
+<button class="ri" data-go="4">An exact separation</button>
+<button class="ri" data-go="5">What learned SAEs show</button>
+<button class="ri" data-go="6">Recovery from paired inputs</button>
+</nav>
+<div class="byline reveal d5"><span><b>OpenSAE</b> · Input Localization</span><span>Seven slides · Five minutes</span></div>
+<div class="keyhint">NEXT <kbd>→</kbd><br>DETAILS <kbd>D</kbd> · NOTES <kbd>N</kbd></div>
+</div>
+<aside class="notes"><span class="time">~20 s</span><h4>Talk track</h4><ol class="track"><li data-for="1">Sparse features count how many components are active. Local features concern which input variables actually determine those component activations. Identical representation samples do not automatically imply identical input dependencies.</li><li data-for="2">We'll see an example, define the measurement, show a theoretical separation, examine five trained SAEs, and estimate the curve with paired interventions.</li></ol></aside>
+</section>
+<section class="slide light" data-title="The problem"><div class="frame"><div class="chrome"><nav class="road" aria-label="Sections"><button class="nav on" data-go="2">Problem</button><button class="nav" data-go="3">Measure</button><button class="nav" data-go="4">Exact</button><button class="nav" data-go="5">Learned</button><button class="nav" data-go="6">Pairs</button></nav><span class="chr-right"><button class="details-btn" data-details aria-label="More details">Details</button></span></div><div class="local-main"><div class="kicker">01 · The problem</div><h2 class="h2 reveal d2">The same frozen SAE can have <em>different input dependencies</em></h2><p class="sub reveal d3">Change only how the controlled inputs are paired with feature activations. All the SAE code samples remain identical.</p><div class="local-grid">
+<div class="local-panel">
+<div class="local-eyebrow">Choose an input map</div>
+<div class="local-choice" role="group" aria-label="Input mapping"><button data-map="identity" aria-pressed="true">Identity</button><button data-map="xor" aria-pressed="false">XOR mixing</button></div>
+<div class="local-pills"><span class="local-pill" id="depLabel">x₁</span><span class="local-arrow">→</span><span class="local-pill">Feature z₁</span></div>
+<div class="local-pills" style="margin-top:16px"><span class="local-pill">x₂</span><span class="local-arrow">→</span><span class="local-pill">Feature z₂</span></div>
+<div class="local-stats">
+<div><div class="local-big" id="depCost">2</div><div class="caption">Minimum links for exact activation prediction</div></div>
+<div><div class="local-big">4</div><div class="caption">Feature-code samples, unchanged under the map</div></div>
+</div>
+<p class="local-notes" id="depDesc">Each feature depends on one input variable.</p>
+</div>
+<div class="local-panel">
+<div class="local-eyebrow">All four input configurations</div>
+<table class="local-table" aria-label="Input to feature truth table"><thead><tr><th>x₁</th><th>x₂</th><th>z₁</th><th>z₂</th></tr></thead><tbody id="truthRows"></tbody></table>
+<div class="local-callout">The same four codes <b>00, 01, 10, 11</b> are simply matched to different inputs.</div>
+<div class="local-source"><a href="../assets/figures/fig1.png" target="_blank" rel="noopener">Paper Figure 1 ↗</a></div>
+</div></div></div><div class="foot"><span>Same SAE codes ≠ same input dependence</span><span>OpenSAE · Local Features</span></div></div><aside class="drawer"><button class="details-btn close" data-details>Close</button><div class="kicker">One small example</div><h3 class="h3">The input map changes, not the SAE</h3><div class="local-technical"><p>Under the identity map, z₁ = x₁ and z₂ = x₂. Under XOR mixing, z₁ = x₁ ⊕ x₂ and z₂ = x₂.</p><p>In both cases the joint multiset of feature codes is {00, 01, 10, 11}. Under XOR mixing, predicting z₁ perfectly needs both x₁ and x₂. Predicting z₂ still needs only x₂. Thus exact scope cost rises from 2 to 3.</p><p>These are illustrative deterministic activations of a fixed SAE under two bijective input assignments.</p><img src="../assets/figures/fig1.png" alt="Overview of the same SAE with different input dependence"></div></aside><aside class="notes"><span class="time">~50 s</span><h4>Talk track</h4><ol class="track"><li data-for="1">The two maps generate exactly the same four code vectors. Under the identity map, the first feature is just input one. With XOR mixing, it depends jointly on two inputs.</li><li data-for="2">Click the XOR button. The truth table changes but the set of feature vectors does not. One extra input-feature link is necessary.</li></ol></aside></section>
+<section class="slide dark" data-title="Optimal scope curve"><div class="frame"><div class="chrome"><nav class="road" aria-label="Sections"><button class="nav" data-go="2">Problem</button><button class="nav on" data-go="3">Measure</button><button class="nav" data-go="4">Exact</button><button class="nav" data-go="5">Learned</button><button class="nav" data-go="6">Pairs</button></nav><span class="chr-right"><button class="details-btn" data-details aria-label="More details">Details</button></span></div><div class="local-main"><div class="kicker">02 · The measurement</div><h2 class="h2 reveal d2">A scope curve measures what input subsets <em>leave unexplained</em></h2><p class="sub reveal d3">Each feature gets a set of inputs allowed to predict it. The total budget counts all input-to-feature links.</p><div class="local-grid wide">
+<div class="local-panel">
+<div class="local-eyebrow">Optimal omitted activation variance for the two-bit example</div>
+<svg class="local-chart" viewBox="0 0 1000 450" role="img" aria-label="Identity scope residual reaches zero at two links while XOR residual reaches zero at three">
+<g stroke="#495571" stroke-width="2"><line x1="120" y1="390" x2="920" y2="390"/><line x1="120" y1="65" x2="120" y2="390"/></g>
+<g stroke="#485472" stroke-width="1"><line x1="120" y1="75" x2="920" y2="75"/><line x1="120" y1="235" x2="920" y2="235"/></g>
+<g class="local-axis"><text x="63" y="84">0.50</text><text x="63" y="245">0.25</text><text x="101" y="395">0</text><text x="160" y="424">0</text><text x="397" y="424">1</text><text x="634" y="424">2</text><text x="871" y="424">3</text><text x="331" y="447">Scope budget B · input-to-feature links</text><text transform="translate(22 335) rotate(-90)">Unexplained variance</text></g>
+<path d="M160 75 L397 235 L634 390 L871 390" fill="none" stroke="#C8A870" stroke-width="7"/>
+<path d="M160 75 L397 235 L634 235 L871 390" fill="none" stroke="#58A9AB" stroke-width="7"/>
+<g fill="#C8A870"><circle cx="160" cy="75" r="7"/><circle cx="397" cy="235" r="7"/><circle cx="634" cy="390" r="7"/><circle cx="871" cy="390" r="7"/></g>
+<g fill="#58A9AB"><circle cx="160" cy="75" r="5"/><circle cx="397" cy="235" r="5"/><circle cx="634" cy="235" r="7"/><circle cx="871" cy="390" r="5"/></g>
+<line id="budgetLine" x1="634" x2="634" y1="65" y2="390" stroke="#E2DCD0" stroke-width="2" stroke-dasharray="7 8" opacity=".8"/>
+</svg>
+<div style="display:flex;gap:35px;margin-top:4px"><span style="color:#C8A870;font:500 17px var(--mono)">● Identity</span><span style="color:#58A9AB;font:500 17px var(--mono)">● XOR mixing</span></div>
+</div>
+<div class="local-panel">
+<div class="local-eyebrow">Move the budget</div>
+<div style="display:flex;gap:22px;align-items:baseline;margin-top:18px"><span class="local-big" id="budgetValue">2</span><span class="body">input-to-feature links</span></div>
+<input class="local-slider" type="range" id="scopeSlider" min="0" max="3" step="1" value="2" aria-label="Number of allowed input-feature links">
+<div class="local-summary">
+<div><div class="stat" id="identityError">0.00</div><div class="caption">Identity residual</div></div>
+<div><div class="stat" style="color:#58A9AB" id="xorError">0.25</div><div class="caption">XOR residual</div></div>
+</div>
+<div class="local-callout" id="scopeTakeaway">Two links explain both identity features exactly. XOR mixing still leaves one feature unexplained.</div>
+</div>
+</div></div><div class="foot"><span>Sparsity counts features · Scope counts input dependencies</span><span>OpenSAE · Local Features</span></div></div><aside class="drawer"><button class="details-btn close" data-details>Close</button><div class="kicker">Definitions</div><h3 class="h3">Optimal input scope curve</h3><div class="local-technical"><p>Let zⱼ(x) be activation of feature j in a frozen SAE. Choose a scope Aⱼ of controlled inputs for each feature, paying one unit per selected input.</p><p class="formula">B(A) = Σⱼ |Aⱼ|</p><p>The best predictor of zⱼ from x<sub>Aⱼ</sub> is E[zⱼ | x<sub>Aⱼ</sub>]. Its omitted variance is E[(zⱼ − E[zⱼ | x<sub>Aⱼ</sub>])²].</p><p class="formula">L<sub>z</sub>(B) = min<sub>B(A) ≤ B</sub> Σⱼ E[(zⱼ − E[zⱼ | x<sub>Aⱼ</sub>])²]</p><p>In the two-bit example, uniform binary variables each have variance 0.25. An XOR feature is unpredictable until both contributing factors are included in its scope.</p></div></aside><aside class="notes"><span class="time">~50 s</span><h4>Talk track</h4><ol class="track"><li data-for="1">An input scope is the set of variables allowed to predict a given SAE activation. We sum its size across all features to get the budget. At each budget we take the smallest omitted activation variance.</li><li data-for="2">Move the slider to budget two. The identity map reaches zero residual. Under XOR mixing, one feature cannot be recovered until budget three.</li></ol></aside></section>
+<section class="slide light" data-title="Exact separation"><div class="frame"><div class="chrome"><nav class="road" aria-label="Sections"><button class="nav" data-go="2">Problem</button><button class="nav" data-go="3">Measure</button><button class="nav on" data-go="4">Exact</button><button class="nav" data-go="5">Learned</button><button class="nav" data-go="6">Pairs</button></nav><span class="chr-right"><button class="details-btn" data-details aria-label="More details">Details</button></span></div><div class="local-main"><div class="kicker">03 · Exact construction</div><h2 class="h2 reveal d2">Exact localization can cost <em>r times as much</em></h2><p class="sub reveal d3">A family of bijective input maps preserves the representation distribution and frozen SAE but changes input interaction order.</p><div class="local-grid narrow">
+<div class="local-panel">
+<div class="local-eyebrow">Exact relative scope cost by interaction order</div>
+<div class="local-bars"><span class="name">r = 1</span><div class="bar-back"><div class="bar" style="width:25%"></div></div><span class="val">1×</span>
+<span class="name">r = 2</span><div class="bar-back"><div class="bar" style="width:50%"></div></div><span class="val">2×</span>
+<span class="name">r = 3</span><div class="bar-back"><div class="bar" style="width:75%"></div></div><span class="val">3×</span>
+<span class="name">r = 4</span><div class="bar-back"><div class="bar" style="width:100%"></div></div><span class="val">4×</span></div>
+<div class="local-callout">Identical sparse representations <b>do not imply</b> the same input-dependency budget.</div>
+<p class="local-source">Exact construction with four input factors over a field of seven elements.</p>
+</div>
+<div class="local-panel">
+<div class="local-eyebrow">Figure 2 · exact optimal scope curves</div>
+<img class="local-image" src="../assets/figures/fig2.png" alt="Paper's exact input scope curves across input interaction orders one through four">
+<div class="local-source">The representation distribution and sparse dictionary remain fixed across orders.</div>
+</div></div></div><div class="foot"><span>Exact separation · same codes · different scopes</span><span>OpenSAE · Local Features</span></div></div><aside class="drawer"><button class="details-btn close" data-details>Close</button><div class="kicker">Mathematical result</div><h3 class="h3">What the exact construction shows</h3><div class="local-technical"><p>On four input factors over the finite field F₇, different bijective maps preserve the same representation sample distribution and the same frozen SAE. Their interaction order ranges from 1 to 4.</p><p>The budget needed for exact localization scales in direct proportion to that order. The construction also covers a setting where sparse coding uniquely selects the common dictionary.</p><p>This proves that an SAE reconstruction and sparsity objective alone cannot guarantee local input dependence.</p><p>Additional compatibility and spectral results bound localization cost using joint input effects and decoder directions.</p><img src="../assets/figures/fig4.png" alt="Paper's comparison of localization lower bounds"></div></aside><aside class="notes"><span class="time">~35 s</span><h4>Talk track</h4><ol class="track"><li data-for="1">The paper gives an exact construction, not just a toy example. Four finite-field input factors are remapped by different interaction orders. The frozen SAE and the representation distribution remain the same.</li><li data-for="2">Yet the exact input-scope cost grows in exact proportion to interaction order, from one times to four times the baseline. This rules out locality as a consequence of sparse reconstruction alone.</li></ol></aside></section>
+<section class="slide dark" data-title="Five learned SAEs"><div class="frame"><div class="chrome"><nav class="road" aria-label="Sections"><button class="nav" data-go="2">Problem</button><button class="nav" data-go="3">Measure</button><button class="nav" data-go="4">Exact</button><button class="nav on" data-go="5">Learned</button><button class="nav" data-go="6">Pairs</button></nav><span class="chr-right"><button class="details-btn" data-details aria-label="More details">Details</button></span></div><div class="local-main"><div class="kicker">04 · Learned SAE experiment</div><h2 class="h2 reveal d2">Five trained SAEs require <em>more links under mixing</em></h2><p class="sub reveal d3">After training, each representation model and SAE is frozen. Only the bijective correspondence with eight binary input factors changes.</p><div class="local-grid wide">
+<div class="local-panel">
+<div class="local-eyebrow">Mean budget for 90% explained activation variance</div>
+<div class="local-maps">
+<span class="name">Identity</span><div class="track" aria-hidden="true"><div class="fill" style="width:67.1%"></div></div><span class="val">136.0</span>
+<span class="name">XOR · 3 factors</span><div class="track" aria-hidden="true"><div class="fill" style="width:94.9%"></div></div><span class="val">192.4</span>
+<span class="name">XOR · 5 factors</span><div class="track" aria-hidden="true"><div class="fill" style="width:100%"></div></div><span class="val">202.8</span>
+</div>
+<div class="local-eyebrow" style="margin-top:32px">Inspect the five independent runs</div>
+<div class="local-choice" role="group" aria-label="Select mapping in five learned SAE runs">
+<button data-learned="identity" aria-pressed="true">Identity</button><button data-learned="xor3" aria-pressed="false">XOR 3</button><button data-learned="xor5" aria-pressed="false">XOR 5</button>
+</div>
+<p class="local-source">All maps are evaluated on the complete 256 input configurations.</p>
+</div>
+<div class="local-panel">
+<div class="local-eyebrow" id="learnedLabel">Identity map</div>
+<div class="local-big" id="learnedBudget" style="margin-top:20px">136.0</div>
+<p class="caption">Average minimum scope budget</p>
+<div class="stat" style="font-size:67px;margin-top:24px" id="learnedChange">Baseline</div>
+<p class="caption" id="learnedText">A single input-factor correspondence for the frozen SAE.</p>
+<div class="local-eyebrow" style="margin-top:33px">Five individual budgets</div>
+<div class="local-seeds" id="learnedSeeds"><span>128</span><span>147</span><span>168</span><span>129</span><span>108</span></div>
+</div></div></div><div class="foot"><span>Five learned SAEs · All 256 input configurations</span><span>OpenSAE · Local Features</span></div></div><aside class="drawer"><button class="details-btn close" data-details>Close</button><div class="kicker">Experiment design</div><h3 class="h3">Five frozen representation–SAE pairs</h3><div class="local-technical"><p>For each independent run, a small representation model and a 24-to-48 overcomplete SAE were trained and then frozen. The evaluation uses the complete set of 256 Boolean input states.</p><p>The correspondence between inputs and codes is varied with identity, three-factor XOR and five-factor XOR maps.</p><p>At 90% explained activation variance, the mean budgets across the five SAEs are 136.0, 192.4, and 202.8 respectively, increases of 41.5% and 49.1% for the two XOR maps.</p><img src="../assets/figures/fig3.png" alt="Paper Figure 3 shows learned SAE localization scope curves"></div></aside><aside class="notes"><span class="time">~45 s</span><h4>Talk track</h4><ol class="track"><li data-for="1">Does the phenomenon still occur in trained SAEs? Five independent representation and sparse autoencoder pairs are trained, then frozen. With identity inputs, their mean budget for explaining ninety percent of feature variance is 136.</li><li data-for="2">The same codes under three-factor and five-factor XOR maps require averages of 192.4 and 202.8. Click each map to inspect its five independent budget values.</li></ol></aside></section>
+<section class="slide light" data-title="Paired intervention recovery"><div class="frame"><div class="chrome"><nav class="road" aria-label="Sections"><button class="nav" data-go="2">Problem</button><button class="nav" data-go="3">Measure</button><button class="nav" data-go="4">Exact</button><button class="nav" data-go="5">Learned</button><button class="nav on" data-go="6">Pairs</button></nav><span class="chr-right"><button class="details-btn" data-details aria-label="More details">Details</button></span></div><div class="local-main"><div class="kicker">05 · Estimating the curve</div><h2 class="h2 reveal d2">Paired interventions recover scope curves <em>as samples increase</em></h2><p class="sub reveal d3">Hold the inputs in a candidate scope fixed. Resample the other inputs independently and measure the feature activation difference.</p><div class="local-grid wide">
+<div class="local-panel">
+<div class="local-eyebrow">Mean maximum normalized curve error across five learned SAEs</div>
+<svg class="local-chart" viewBox="0 0 970 450" role="img" aria-label="Recovery error decreases as paired intervention sample count increases">
+<g stroke="#A49F93" stroke-width="2"><line x1="120" y1="390" x2="915" y2="390"/><line x1="120" y1="80" x2="120" y2="390"/></g>
+<g stroke="#D1C9BA" stroke-width="1"><line x1="120" y1="100" x2="915" y2="100"/><line x1="120" y1="197" x2="915" y2="197"/><line x1="120" y1="293" x2="915" y2="293"/></g>
+<g class="local-axis"><text x="57" y="106">0.12</text><text x="57" y="202">0.08</text><text x="57" y="298">0.04</text><text x="96" y="395">0</text><text x="162" y="423">32</text><text x="363" y="423">128</text><text x="578" y="423">512</text><text x="785" y="423">2,048</text><text x="330" y="448">Pairs per candidate scope</text></g>
+<path d="M175 92 L385 280 L595 342 L805 364" fill="none" stroke="#9C7C43" stroke-width="7" stroke-linejoin="round"/>
+<g fill="#9C7C43"><circle cx="175" cy="92" r="9"/><circle cx="385" cy="280" r="9"/><circle cx="595" cy="342" r="9"/><circle cx="805" cy="364" r="9"/></g>
+<circle id="sampleRing" cx="805" cy="364" r="18" fill="none" stroke="#1A2030" stroke-width="3"/>
+</svg>
+<div class="local-choice" role="group" aria-label="Choose number of input intervention pairs" style="margin-top:8px">
+<button data-sample="0" aria-pressed="false">32 pairs</button><button data-sample="1" aria-pressed="false">128</button><button data-sample="2" aria-pressed="false">512</button><button data-sample="3" aria-pressed="true">2,048</button>
+</div></div>
+<div class="local-panel">
+<div class="local-eyebrow">Selected sampling budget</div>
+<div class="local-big" id="sampleError" style="margin-top:28px">0.0109</div>
+<p class="caption">Maximum normalized curve error, mean over five SAEs</p>
+<div class="local-callout" id="sampleDesc">At 2,048 pairs per candidate scope, estimated curves closely track the exact curves.</div>
+<div class="local-eyebrow" style="margin-top:40px">Estimator</div>
+<div class="local-formula">Omitted variance = ½ E[(z(x) − z(y))²]<small>y uses x inside the scope, and an independent input x′ outside it.</small></div>
+</div></div></div><div class="foot"><span>Pair resampling · Lower curve error with more samples</span><span>OpenSAE · Local Features</span></div></div><aside class="drawer"><button class="details-btn close" data-details>Close</button><div class="kicker">Paired-input identity</div><h3 class="h3">Estimating scope error without a full grid</h3><div class="local-technical"><p>Draw independent inputs x and x′ from a product intervention distribution. For a proposed subset A, form y = (x<sub>A</sub>, x′<sub>−A</sub>).</p><p class="formula">E[(zⱼ(x) − E[zⱼ | x<sub>A</sub>])²] = ½ E[(zⱼ(x) − zⱼ(y))²]</p><p>Estimate each candidate scope's omitted variance with paired interventions. Optimize the selection of scopes under the total budget constraint to estimate the curve.</p><p>The five-SAE experiment reports mean maximum normalized curve error of 0.123, 0.0472, 0.0216, and 0.0109 for 32, 128, 512, and 2,048 pairs per scope, respectively.</p><img src="../assets/figures/fig3.png" alt="Paper Figure 3 shows paired intervention recovery"></div></aside><aside class="notes"><span class="time">~45 s</span><h4>Talk track</h4><ol class="track"><li data-for="1">How can we estimate the optimal scope curve? Fix the inputs within a proposed scope. Draw another independent input configuration for the factors outside the scope. The squared difference of the two feature activations, divided by two, measures the omitted conditional variance.</li><li data-for="2">The more pairs we sample, the closer the empirical curve gets to the exact curve. Compare 32 pairs with 2,048 pairs; the reported mean maximum normalized error drops from 0.123 to 0.0109.</li></ol></aside></section>
+<section class="slide dark" data-title="Takeaways">
+<div class="frame">
+<div class="chrome"><span>Takeaways</span><span>OpenSAE · Input Localization</span></div>
+<div class="local-main">
+<div class="kicker reveal d1">Sparse autoencoders do not guarantee local features</div>
+<h2 class="h2 reveal d2" style="font-size:54px;max-width:1490px">Input locality is a property to <em>measure</em>, not one that sparse reconstruction <em>guarantees</em></h2>
+<div class="local-takes reveal d3">
+<div class="local-take"><div class="h3">Same codes, <em>different scopes</em></div><div class="body">A frozen SAE and unchanged representation samples can require different input dependencies.</div></div>
+<div class="local-take"><div class="h3">The scope curve <em>quantifies</em> the gap</div><div class="body">Five learned SAEs need 41.5% or 49.1% more links under XOR mixing at 90% explained variance.</div></div>
+<div class="local-take"><div class="h3">Paired inputs <em>estimate</em> the curve</div><div class="body">More independent resampled pairs reduce the normalized curve error from 0.123 to 0.0109.</div></div>
+</div>
+<div class="local-code reveal d4">git clone https://github.com/OpenSAE/SAE-Input-Localization.git
+cd SAE-Input-Localization && pip install -e .
+python demo/demo.py</div>
+<div class="local-linkrow reveal d5">
+<a href="https://github.com/OpenSAE/SAE-Input-Localization" target="_blank" rel="noopener">Project and README ↗</a>
+<a href="https://github.com/OpenSAE/SAE-Input-Localization/blob/main/docs/REPRODUCIBILITY.md" target="_blank" rel="noopener">Reproduce results ↗</a>
+<a href="../assets/figures/fig1.png" target="_blank" rel="noopener">Paper overview ↗</a>
+</div>
+</div>
+</div>
+<aside class="notes"><span class="time">~30 s</span><h4>Talk track</h4><ol class="track"><li data-for="1">Three takeaways. Sparsity alone does not guarantee that a feature depends on a small set of inputs. The optimal input scope curve directly measures this property. The five learned SAEs show a substantial gap under controlled input remappings.</li><li data-for="2">Paired interventions estimate the curve, and a complete demo is included in the repository. Run the listed commands to reproduce the reported learned-SAE comparison.</li></ol></aside>
+</section>
+</main></div>
+<div id="notesPanel" aria-live="polite"></div>
+<div id="helpPanel" role="dialog" aria-label="Keyboard help"><div class="card"><div><kbd>← →</kbd> previous or next slide · Space, wheel and swipe</div><div><kbd>Home End</kbd> first or last slide</div><div><kbd>D</kbd> details drawer for this slide</div><div><kbd>N</kbd> speaker notes</div><div><kbd>?</kbd> help · <kbd>Esc</kbd> close panels</div></div></div>
+<nav class="deck-controls" aria-label="Slide navigation"><button id="prevBtn" aria-label="Previous slide">‹</button><span id="counter">01 / 07</span><button id="nextBtn" aria-label="Next slide">›</button><button id="notesBtn" aria-label="Speaker notes">N</button><button id="helpBtn" aria-label="Keyboard help">?</button></nav>
+<script>
 
-# A complete Boolean factorial activation table:
-python demo/custom_activations.py my_codes.npy --n-factors 8</pre>
-      <p>Continue with the <a href="API.md">Python API</a> and <a href="REPRODUCIBILITY.md">reproduction guide</a>.</p>
-    </section>
-  </main>
-  <footer class="wrap">OpenSAE · Sparse Autoencoders Do Not Guarantee Local Features</footer>
+const $ = (id) => document.getElementById(id);
+class SlidePresentation {
+    constructor() {
+        this.slides = Array.from(document.querySelectorAll('.slide'));
+        this.stage = $('deckStage');
+        this.current = 0; this.wheelLock = false; this.factor = 1;
+        this.initialHash = location.hash;   /* go() rewrites the hash; keep the original for &id=value state */
+        this.setupStageScale(); this.setupKeyboardNav(); this.setupWheelNav(); this.setupTouchNav();
+        $('prevBtn').addEventListener('click', () => this.go(this.current - 1));
+        $('nextBtn').addEventListener('click', () => this.go(this.current + 1));
+        $('notesBtn').addEventListener('click', () => this.toggleNotes());
+        $('helpBtn').addEventListener('click', () => $('helpPanel').classList.toggle('show'));
+        $('helpPanel').addEventListener('click', () => $('helpPanel').classList.remove('show'));
+        document.querySelectorAll('[data-details]').forEach((b) => b.addEventListener('click', () => this.toggleDrawer()));
+        /* deep links: #N = slide N; append d = open details, n = open notes (e.g. #5dn);
+           then &id=value sets a control after init (QA: #6&budget=0.4, #3&revealBtn=click) */
+        const hm = location.hash.match(/^#(\d+)([dn]*)/);
+        this.go(hm ? +hm[1] - 1 : 0);
+        if (hm && hm[2].includes('d')) this.toggleDrawer();
+        if (hm && hm[2].includes('n')) this.toggleNotes();
+        window.addEventListener('hashchange', () => { const k = parseInt(location.hash.slice(1), 10); if (Number.isFinite(k) && k - 1 !== this.current) this.go(k - 1); });
+    }
+    setupStageScale() {
+        /* the stage fits the space left of the walk-through panel when it is open */
+        const scale = () => {
+            const panel = $('notesPanel'), side = panel.classList.contains('show') ? panel.offsetWidth : 0;
+            const W = window.innerWidth - side, H = window.innerHeight;
+            const f = Math.min(W / 1920, H / 1080);
+            this.stage.style.transform = `translate(${(W - 1920 * f) / 2}px, ${(H - 1080 * f) / 2}px) scale(${f})`;
+            this.factor = f;
+        };
+        this.rescale = scale;
+        scale(); window.addEventListener('resize', scale);
+    }
+    isInteractive(el, withSvg) { return !!(el && el.closest && el.closest('input, button, select, textarea, [contenteditable="true"]' + (withSvg ? ', svg' : ''))); }
+    setupKeyboardNav() {
+        document.addEventListener('keydown', (e) => {
+            if (document.body.classList.contains('editing')) return;
+            const k = e.key;
+            if (k === 'Escape') { this.slides[this.current].classList.remove('drawer-open'); $('helpPanel').classList.remove('show'); return; }
+            if (e.target.closest && e.target.closest('input')) return;          /* sliders keep their arrow keys */
+            if (k === 'd' || k === 'D') { this.toggleDrawer(); return; }
+            if (k === 'n' || k === 'N') { this.toggleNotes(); return; }
+            if (k === '?') { $('helpPanel').classList.toggle('show'); return; }
+            if (e.target.closest && e.target.closest('button') && k === ' ') return; /* space activates buttons */
+            if (['ArrowRight', 'ArrowDown', 'PageDown', ' '].includes(k)) { e.preventDefault(); this.go(this.current + 1); }
+            if (['ArrowLeft', 'ArrowUp', 'PageUp'].includes(k)) { e.preventDefault(); this.go(this.current - 1); }
+            if (k === 'Home') this.go(0);
+            if (k === 'End') this.go(this.slides.length - 1);
+        });
+    }
+    setupWheelNav() {
+        window.addEventListener('wheel', (e) => {
+            if (this.wheelLock || Math.abs(e.deltaY) < 30 || this.isInteractive(e.target) || e.target.closest('#notesPanel, .drawer')) return;
+            this.wheelLock = true; this.go(this.current + (e.deltaY > 0 ? 1 : -1));
+            setTimeout(() => { this.wheelLock = false; }, 800);
+        }, { passive: true });
+    }
+    setupTouchNav() {
+        let x0 = null, y0 = null;
+        window.addEventListener('touchstart', (e) => {
+            if (this.isInteractive(e.target, true) || e.target.closest('.drawer, #notesPanel')) { x0 = null; return; }
+            x0 = e.touches[0].clientX; y0 = e.touches[0].clientY;
+        }, { passive: true });
+        window.addEventListener('touchend', (e) => {
+            if (x0 === null) return;
+            const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0;
+            if (Math.abs(dx) > 60 && Math.abs(dx) > 1.5 * Math.abs(dy)) this.go(this.current + (dx < 0 ? 1 : -1));
+            x0 = null;
+        }, { passive: true });
+    }
+    applyHashState() {
+        (this.initialHash.match(/&[\w-]+=[^&]*/g) || []).forEach((kv) => {
+            const [id, val] = kv.slice(1).split('='), el = $(id);
+            if (!el) return;
+            if (val === 'click') el.click(); else { el.value = decodeURIComponent(val); el.dispatchEvent(new Event('input')); }
+        });
+    }
+    toggleDrawer() { const s = this.slides[this.current]; if (s.querySelector('.drawer')) s.classList.toggle('drawer-open'); }
+    toggleNotes() {
+        const on = $('notesPanel').classList.toggle('show');
+        document.body.classList.toggle('notes-on', on);
+        document.body.classList.toggle('track', on);   /* numbered badges follow the notes */
+        this.rescale();
+    }
+    go(i) {
+        this.current = Math.max(0, Math.min(i, this.slides.length - 1));
+        this.slides.forEach((s, k) => {
+            const on = k === this.current;
+            s.classList.toggle('active', on); s.classList.toggle('visible', on);
+            if (!on) s.classList.remove('drawer-open');
+            s.setAttribute('aria-hidden', on ? 'false' : 'true');
+        });
+        const n = String(this.slides.length).padStart(2, '0');
+        $('counter').textContent = `${String(this.current + 1).padStart(2, '0')} / ${n}`;
+        $('progress').style.width = `${(100 * (this.current + 1)) / this.slides.length}%`;
+        const notes = this.slides[this.current].querySelector('aside.notes');
+        $('notesPanel').innerHTML = `<h4>${String(this.current + 1).padStart(2, '0')} · ${this.slides[this.current].dataset.title}</h4>` + (notes ? notes.innerHTML : '');
+        try { history.replaceState(null, '', `#${this.current + 1}`); } catch (e) { /* file:// sandbox */ }
+    }
+}
+
+
+const deck = new SlidePresentation();
+document.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click",() => deck.go(Number(b.dataset.go)-1)));
+/* A: Identical SAE codes, remapped input variables. */
+function showMap(which) {
+  const xor=which==="xor";
+  document.querySelectorAll("[data-map]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.map===which)));
+  $("depLabel").textContent=xor?"x₁, x₂":"x₁";
+  $("depCost").textContent=xor?"3":"2";
+  $("depDesc").textContent=xor?"Feature z₁ depends jointly on x₁ and x₂; feature z₂ still depends on x₂.":"Each feature depends on one input variable.";
+  $("truthRows").innerHTML=Array.from({length:4},(_,i)=>{
+    const x1=Math.floor(i/2),x2=i%2,z1=xor?(x1^x2):x1;
+    return '<tr><td>'+x1+'</td><td>'+x2+'</td><td class="'+(xor?'changed':'')+'">'+z1+'</td><td>'+x2+'</td></tr>';
+  }).join("");
+}
+document.querySelectorAll("[data-map]").forEach(b=>b.addEventListener("click",()=>showMap(b.dataset.map)));
+showMap("identity");
+/* B: Exact two-bit scope curves, cost 0..3. */
+const idCurve=[.5,.25,0,0],xorCurve=[.5,.25,.25,0];
+function updateScope(v) {
+ const b=Math.max(0,Math.min(3,Number(v)));
+ $("budgetValue").textContent=b;
+ $("identityError").textContent=idCurve[b].toFixed(2);
+ $("xorError").textContent=xorCurve[b].toFixed(2);
+ const x=160+237*b;$("budgetLine").setAttribute("x1",x);$("budgetLine").setAttribute("x2",x);
+ $("scopeTakeaway").textContent=[
+  "Without any inputs, both features are unpredictable in either mapping.",
+  "One input-to-feature link removes one quarter of the total omitted variance in either mapping.",
+  "Two links explain the identity codes exactly; XOR mixing leaves one quarter unexplained.",
+  "Three links explain both maps exactly. The extra XOR dependency has been included."
+ ][b];
+}
+$("scopeSlider").addEventListener("input",e=>updateScope(e.target.value));
+updateScope(2);
+/* C: Five trained SAEs. */
+const learnedData={
+ identity:{name:"Identity map",mean:"136.0",change:"Baseline",desc:"The original input-to-code correspondence.",seeds:[128,147,168,129,108]},
+ xor3:{name:"Three-factor XOR",mean:"192.4",change:"+41.5%",desc:"Mean budget rises by 56.4 input-to-feature links.",seeds:[206,197,197,186,176]},
+ xor5:{name:"Five-factor XOR",mean:"202.8",change:"+49.1%",desc:"Mean budget rises by 66.8 input-to-feature links.",seeds:[215,204,205,192,198]}
+};
+function updateLearned(k){
+ const d=learnedData[k];if(!d)return;
+ document.querySelectorAll("[data-learned]").forEach(b=>b.setAttribute("aria-pressed",String(b.dataset.learned===k)));
+ $("learnedLabel").textContent=d.name;
+ $("learnedBudget").textContent=d.mean;
+ $("learnedChange").textContent=d.change;
+ $("learnedText").textContent=d.desc;
+ $("learnedSeeds").innerHTML=d.seeds.map(x=>"<span>"+x+"</span>").join("");
+}
+document.querySelectorAll("[data-learned]").forEach(b=>b.addEventListener("click",()=>updateLearned(b.dataset.learned)));
+updateLearned("identity");
+/* D: Finite paired resampling. Plot uses chart coordinates tied to displayed data. */
+const nPairs=[32,128,512,2048],errors=[.123,.0472,.0216,.0109],xPoints=[175,385,595,805];
+function updatePairs(j){
+ j=Math.max(0,Math.min(3,Number(j)));
+ $("sampleError").textContent=String(errors[j]);
+ $("sampleRing").setAttribute("cx",xPoints[j]);
+ $("sampleRing").setAttribute("cy",390-290*(errors[j]/.125));
+ $("sampleDesc").textContent=j===3?"At 2,048 pairs per candidate scope, the estimated curves closely follow the exact curves.":
+  "Using "+nPairs[j].toLocaleString()+" pairs per candidate scope yields error "+errors[j]+". More pairs improve recovery.";
+ document.querySelectorAll("[data-sample]").forEach(b=>b.setAttribute("aria-pressed",String(Number(b.dataset.sample)===j)));
+}
+document.querySelectorAll("[data-sample]").forEach(b=>b.addEventListener("click",()=>updatePairs(b.dataset.sample)));
+updatePairs(3);
+/* Disable the hidden inline edit workflow in the published deck, as SAR/RSS do. */
+document.addEventListener("keydown",e=>{if(e.key==="Escape"){$("helpPanel").classList.remove("show");}});
+document.querySelectorAll(".deck-controls button").forEach(b=>b.addEventListener("click",()=>{}));
+/* Pointer activity wakes the compact navigation controls. */
+(()=>{
+ const nav=document.querySelector(".deck-controls");let t=null;
+ const wake=()=>{nav.classList.remove("idle");clearTimeout(t);t=setTimeout(()=>nav.classList.add("idle"),2600);};
+ ["mousemove","touchstart","keydown"].forEach(ev=>window.addEventListener(ev,wake,{passive:true}));
+ wake();
+})();
+deck.applyHashState();
+
+</script>
 </body>
 </html>
