@@ -1,4 +1,0 @@
--r requirements.txt
-torch>=2.0
-matplotlib>=3.7
-pandas>=1.5

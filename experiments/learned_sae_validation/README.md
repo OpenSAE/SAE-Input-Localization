@@ -47,3 +47,7 @@ python plot_paper_figures.py --results ./outputs/retrained \
 ```
 
 The `results/` folder contains five model checkpoints (`seed_*_weights.pt`), frozen activations, exact curves, sampled estimates, and result tables. See [the reproduction guide](../../docs/REPRODUCIBILITY.md) for the full workflow.
+
+## Dependencies
+
+From the repository root, install the shared dependencies with `python -m pip install -r requirements.txt`. The same file supports the released demo and the learned SAE validation scripts.
